@@ -9,7 +9,6 @@ crate-type = ["cdylib"]
 [dependencies]
 stylus-sdk = "0.6.0"
 alloy-primitives = "0.7.6"
-alloy-sol-types = "0.7.6"
 mini-alloc = "0.4.2"
 
 [profile.release]

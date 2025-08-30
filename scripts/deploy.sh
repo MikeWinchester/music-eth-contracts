@@ -72,7 +72,7 @@ fi
 log "Contrato desplegado exitosamente!"
 
 # Extraer dirección del contrato del output
-CONTRACT_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep -o "0x[a-fA-F0-9]\{40\}")
+CONTRACT_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep -i "deployed.*code.*0x" | grep -o "0x[a-fA-F0-9]\{40\}" | tail -n1)
 
 if [ -z "$CONTRACT_ADDRESS" ]; then
     error "No se pudo extraer la dirección del contrato!"
