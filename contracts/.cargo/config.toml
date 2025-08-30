@@ -4,7 +4,6 @@ target = "wasm32-unknown-unknown"
 [target.wasm32-unknown-unknown]
 rustflags = [
     "-C", "panic=abort",
-    "-C", "link-arg=--import-memory",
     "-C", "opt-level=s"
 ]
 

@@ -6,7 +6,6 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
-# Usar endpoint por defecto si no está definido
 RPC_URL ?= https://sepolia-rollup.arbitrum.io/rpc
 
 setup:
@@ -22,7 +21,7 @@ test:
 	@cd contracts && cargo test
 
 deploy-sepolia:
-	@cd contracts && ../scripts/deploy.sh sepolia
+	@scripts/deploy.sh sepolia
 
 deploy-mainnet:
 	@cd contracts && ../scripts/deploy.sh mainnet

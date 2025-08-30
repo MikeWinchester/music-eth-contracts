@@ -49,8 +49,7 @@ fi
 
 # Verificar compatibilidad con Stylus
 log "Verificando compatibilidad con Stylus..."
-cargo stylus check
-
+cargo stylus check --endpoint $RPC_URL
 if [ $? -ne 0 ]; then
     error "Verificación de Stylus falló!"
     exit 1

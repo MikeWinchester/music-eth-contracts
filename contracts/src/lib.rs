@@ -1,4 +1,3 @@
-// contracts/src/lib.rs - Versión actualizada para stylus-sdk 0.6.0
 #![cfg_attr(not(feature = "export-abi"), no_main)]
 extern crate alloc;
 
@@ -9,7 +8,6 @@ use stylus_sdk::{
     call::transfer_eth,
 };
 
-// Definir el almacenamiento usando la nueva sintaxis sol_storage!
 sol_storage! {
     #[entrypoint]
     pub struct MusicStreamingPlatform {
@@ -106,13 +104,5 @@ impl MusicStreamingPlatform {
         }
     }
 
-    /// Cambiar precio por reproducción (solo owner)
-    pub fn set_price_per_play(&mut self, new_price: U256) -> Result<(), Vec<u8>> {
-        if msg::sender() != self.owner.get() {
-            return Err(b"Only owner".to_vec());
-        }
-        
-        self.price_per_play.set(new_price);
-        Ok(())
-    }
+
 }
