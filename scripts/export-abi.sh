@@ -4,9 +4,15 @@ NETWORK=${1:-sepolia}
 
 echo "Exportando ABI para red: $NETWORK"
 
-cd contracts
+cd ../contracts
 
 # Exportar ABI
+if [ -d "../abis" ]; then
+    echo "Folder exists"
+else
+    mkdir ../abis
+    echo "Folder does not exist"
+fi
 cargo stylus export-abi > ../abis/MusicStreaming.json
 
 if [ $? -eq 0 ]; then

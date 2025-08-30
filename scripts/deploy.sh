@@ -58,14 +58,18 @@ fi
 # Desplegar
 log "Desplegando contrato..."
 DEPLOY_OUTPUT=$(cargo stylus deploy \
+    --wasm-file target/wasm32-unknown-unknown/release/music_streaming_contracts.wasm \
     --private-key $PRIVATE_KEY \
     --endpoint $RPC_URL \
-    --estimate-gas)
+    --no-verify)
 
+# Verificar si el deploy fue exitoso
 if [ $? -ne 0 ]; then
     error "Despliegue falló!"
     exit 1
 fi
+
+log "Contrato desplegado exitosamente!"
 
 # Extraer dirección del contrato del output
 CONTRACT_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep -o "0x[a-fA-F0-9]\{40\}")
@@ -78,6 +82,12 @@ fi
 log "Contrato desplegado en: $CONTRACT_ADDRESS"
 
 # Guardar deployment info
+if [ -d "../deployments" ]; then
+    echo "Folder exists"
+else
+    mkdir ../deployments
+    echo "Folder does not exist"
+fi
 DEPLOYMENT_FILE="../deployments/$NETWORK.json"
 cat > $DEPLOYMENT_FILE << EOF
 {
