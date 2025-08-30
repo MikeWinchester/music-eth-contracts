@@ -10,13 +10,13 @@ test:
 	@cd contracts && cargo test
 
 deploy-sepolia:
-	@./scripts/deploy.sh sepolia
+	@cd contracts && ../scripts/deploy.sh sepolia
 
 deploy-mainnet:
-	@./scripts/deploy.sh mainnet
+	@cd contracts && ../scripts/deploy.sh mainnet
 
 export-abi:
-	@./scripts/export-abi.sh
+	@cd contracts && ../scripts/export-abi.sh
 
 clean:
 	@cd contracts && cargo clean
