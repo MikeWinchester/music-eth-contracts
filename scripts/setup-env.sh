@@ -17,10 +17,26 @@ if ! command -v cargo &> /dev/null; then
     source ~/.cargo/env
 fi
 
+# Instalar la versión específica de Rust requerida por Stylus
+echo "Configurando versión específica de Rust..."
+rustup install nightly-2024-12-15
+rustup default nightly-2024-12-15
+
 # Agregar WASM target si no existe
 if ! rustup target list | grep -q "wasm32-unknown-unknown (installed)"; then
     echo "Agregando target WASM..."
     rustup target add wasm32-unknown-unknown
+fi
+
+# Verificar que rust-toolchain.toml existe
+if [ ! -f rust-toolchain.toml ]; then
+    echo "Creando rust-toolchain.toml..."
+    cat > rust-toolchain.toml << EOF
+[toolchain]
+channel = "nightly-2024-12-15"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
+EOF
 fi
 
 if ! command -v cargo-stylus &> /dev/null; then
@@ -29,3 +45,5 @@ if ! command -v cargo-stylus &> /dev/null; then
 fi
 
 echo "Ambiente configurado correctamente!"
+echo "Versión de Rust: $(rustc --version)"
+echo "Stylus CLI: $(cargo stylus --version)"
