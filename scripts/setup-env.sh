@@ -19,33 +19,22 @@ fi
 
 # Instalar la versión específica de Rust requerida por Stylus
 echo "Configurando versión específica de Rust..."
-rustup install nightly-2024-11-01
-rustup default nightly-2024-11-01
+rustup install nightly-2024-12-16
+rustup default nightly-2024-12-16
 
 # Instalar componentes necesarios
 echo "Instalando componentes de Rust..."
-rustup component add rust-src --toolchain nightly-2024-11-01
-rustup component add rustfmt --toolchain nightly-2024-11-01
-rustup component add clippy --toolchain nightly-2024-11-01
+rustup component add rust-src --toolchain nightly-2024-12-16
+rustup component add rustfmt --toolchain nightly-2024-12-16
+rustup component add clippy --toolchain nightly-2024-12-16
 
 # Agregar WASM target
 echo "Agregando target WASM..."
-rustup target add wasm32-unknown-unknown --toolchain nightly-2024-11-01
-
-# Verificar que rust-toolchain.toml existe en contracts/
-if [ ! -f contracts/rust-toolchain.toml ]; then
-    echo "Creando rust-toolchain.toml en contracts/..."
-    cat > contracts/rust-toolchain.toml << EOF
-[toolchain]
-channel = "nightly-2024-11-01"
-components = ["rustfmt", "clippy"]
-targets = ["wasm32-unknown-unknown"]
-EOF
-fi
+rustup target add wasm32-unknown-unknown --toolchain nightly-2024-12-16
 
 if ! command -v cargo-stylus &> /dev/null; then
     echo "Instalando cargo-stylus..."
-    cargo install cargo-stylus
+    cargo install --force cargo-stylus
 fi
 
 echo "Ambiente configurado correctamente!"

@@ -1,10 +1,22 @@
 .PHONY: setup build test deploy clean
 
+# Cargar variables de entorno
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
+# Usar endpoint por defecto si no está definido
+RPC_URL ?= https://sepolia-rollup.arbitrum.io/rpc
+
 setup:
 	@./scripts/setup-env.sh
 
 build:
-	@cd contracts && cargo build --release --target wasm32-unknown-unknown
+	@./scripts/build.sh
+
+build-clean:
+	@./scripts/build.sh --clean
 
 test:
 	@cd contracts && cargo test
@@ -26,5 +38,8 @@ watch:
 
 dev: build watch
 
-check:
-	@cd contracts && cargo stylus check
+check: build
+	@cd contracts && cargo stylus check --endpoint $(RPC_URL) --wasm-file target/wasm32-unknown-unknown/release/music_streaming_contracts.wasm
+
+check-local:
+	@cd contracts && cargo stylus check --wasm-file target/wasm32-unknown-unknown/release/music_streaming_contracts.wasm

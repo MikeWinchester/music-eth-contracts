@@ -6,21 +6,15 @@ edition = "2021"
 [profile.release]
 panic = "abort"
 lto = true
-opt-level = "z"  # Máxima optimización para tamaño
+opt-level = "s"
 codegen-units = 1
+strip = true
 
 [dependencies]
 stylus-sdk = "0.6.0"
-alloy-primitives = "=0.7.6"
-alloy-sol-types = "=0.7.6"
+alloy-primitives = "0.7.6"
+alloy-sol-types = "0.7.6"
 mini-alloc = "0.4.2"
-
-# Forzar versiones específicas que no usen edition2024
-[dependencies.base64ct]
-version = "=1.6.0"
-
-[dev-dependencies]
-tokio = { version = "1.0", features = ["full"] }
 
 [lib]
 crate-type = ["cdylib"]
