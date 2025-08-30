@@ -1,0 +1,10 @@
+[workspace]
+members = ["contracts"]
+resolver = "2"
+
+[workspace.dependencies]
+stylus-sdk = "0.6.0"
+alloy-primitives = "=0.7.6"
+alloy-sol-types = "=0.7.6"
+mini-alloc = "0.4.2"
+tokio = { version = "1.0", features = ["full"] }
