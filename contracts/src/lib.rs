@@ -14,6 +14,7 @@ pub struct Song {
     Address artist;
     uint256 song_id;
     uint256 price_per_play;
+    uint256 plays;
 }
 
 pub struct User {
@@ -64,21 +65,25 @@ impl MusicStreamingPlatform {
     #[payable]
     pub fn play_song(&mut self, song_id: U256, artist: Address) -> Result<(), Vec<u8>> {
         let price = self.get_price_per_play(song_id);
-
+        self.withdraw(self.listener,price);
         Ok(())
     }
 
     /// Obtener balance de un artista
-    pub fn get_artist_balance(&self, artist) -> U256 {
-        
+    pub fn get_artist_balance(&self, artist: User) -> U256 {
+        artist.address.get()
     }
     
     /// Obtener reproducciones de una canción
     pub fn get_song_plays(&self, song_id: U256) -> U256 {
-        self.song_plays.get(song_id)
+        let (exists , current_song): (bool,Song) = self.find_song(song_id);
+        if exists == true {
+            return current_song.plays.get();
+        }else {
+            return U256::from(0);
+        }
     }
 
-    // =================== RETIRO DE FONDOS ===================
     
     /// Retirar fondos (solo el artista puede retirar sus fondos)
     pub fn withdraw(&mut self, amount: U256) -> Result<(), Vec<u8>> {
