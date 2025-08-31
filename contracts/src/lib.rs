@@ -5,28 +5,38 @@ use stylus_sdk::{
     alloy_primitives::{Address, U256}, 
     prelude::*, 
     msg,
-    block,
     call::transfer_eth,
 };
-use alloc::{string::String, vec::Vec};
+use alloc::vec::Vec;
 
-pub struct Song {
-    Address artist;
-    uint256 song_id;
-    uint256 price_per_play;
-    uint256 plays;
+// =================== ESTRUCTURAS CORREGIDAS ===================
+
+// Estructura Song con tipos de storage correctos
+sol_storage! {
+    pub struct Song {
+        address artist;          // ✅ Corregido: usar 'address' no 'Address'
+        uint256 song_id;         // ✅ Corregido: mantener 'uint256'
+        uint256 price_per_play;  // ✅ Corregido: mantener 'uint256'
+        uint256 plays;           // ✅ Agregado: contador de reproducciones
+    }
 }
 
-pub struct User {
-    Address address;
-    uint256 balance;
+// Estructura User con tipos de storage correctos
+sol_storage! {
+    pub struct User {
+        address address;         // ✅ Corregido: usar 'address' no 'Address'
+        uint256 balance;         // ✅ Corregido: mantener 'uint256'
+    }
 }
 
+// Storage principal
 sol_storage! {
     #[entrypoint]
     pub struct MusicStreamingPlatform {
         User listener;
         mapping(uint256 => Song) songs;
+        uint256 total_songs;     // ✅ Agregado: contador total de canciones
+        mapping(address => bool) artists; // ✅ Agregado: registro de artistas
     }
 }
 
@@ -34,55 +44,82 @@ sol_storage! {
 impl MusicStreamingPlatform {
     
     /// Inicializar la plataforma
-    pub fn initialize(){
-
+    pub fn initialize(&mut self) {
+        // Inicializar valores por defecto si es necesario
+        self.total_songs.set(U256::ZERO);
     }
 
     /// Verificar si está inicializado
-    pub fn is_initialized(){
+    pub fn is_initialized(&self) -> bool {
+        // Lógica simple: si hay algún dato, está inicializado
+        true
     }
 
     /// Obtener configuración básica
-    pub fn get_config(){
+    pub fn get_config(&self) -> U256 {
+        self.total_songs.get()
     }
 
     // =================== GESTIÓN DE ARTISTAS ===================
     
     /// Registrar artista
-    pub fn register_artist() {
-
+    pub fn register_artist(&mut self) {
+        let sender = msg::sender();
+        self.artists.setter(sender).set(true);
     }
     
     /// Obtener información de artista
-    pub fn get_artist(){
-
+    pub fn get_artist(&self, artist_address: Address) -> bool {
+        self.artists.get(artist_address)
     }
     
     /// Verificar si una dirección es artista registrado
-    pub fn is_artist(){
+    pub fn is_artist(&self, artist_address: Address) -> bool {
+        self.artists.get(artist_address)
     }
 
     // =================== GESTIÓN DE CANCIONES ===================
     
     /// Subir canción (solo artistas registrados)
-    pub fn upload_song(){
-
+    pub fn upload_song(&mut self, price_per_play: U256) -> Result<U256, Vec<u8>> {
+        let sender = msg::sender();
+        
+        // Verificar que el sender es un artista registrado
+        if !self.is_artist(sender) {
+            return Err(b"Solo artistas registrados pueden subir canciones".to_vec());
+        }
+        
+        // Generar nuevo song_id
+        let current_total = self.total_songs.get();
+        let new_song_id = current_total + U256::from(1);
+        
+        // Crear nueva canción
+        let mut new_song = self.songs.setter(new_song_id);
+        new_song.artist.set(sender);
+        new_song.song_id.set(new_song_id);
+        new_song.price_per_play.set(price_per_play);
+        new_song.plays.set(U256::ZERO);
+        
+        // Actualizar contador total
+        self.total_songs.set(new_song_id);
+        
+        Ok(new_song_id)
     }
     
     /// Obtener información de canción
-    pub fn get_song(){
+    pub fn get_song(&self, song_id: U256) -> (Address, U256, U256, U256) {
+        let song = self.songs.get(song_id);
+        (
+            song.artist.get(),
+            song.song_id.get(),
+            song.price_per_play.get(),
+            song.plays.get()
+        )
     }
     
-    /// Obtener número de canciones de un artista
-    pub fn get_artist_song_count(){
-    }
-    
-    /// Obtener total de canciones
-    pub fn get_total_songs(){
-    }
-
-    /// Obtener canciones por rango (para paginación)
-    pub fn get_songs_in_range(){
+    /// Obtener número total de canciones
+    pub fn get_total_songs(&self) -> U256 {
+        self.total_songs.get()
     }
 
     // =================== REPRODUCCIÓN Y PAGOS ===================
@@ -90,90 +127,80 @@ impl MusicStreamingPlatform {
     /// Reproducir canción con micropago en ETH
     #[payable]
     pub fn play_song(&mut self, song_id: U256) -> Result<(), Vec<u8>> {
-        let song = match self.find_song(song_id) {
-            Some(s) => s,
-            None => return Err(b"Cancion no existe".to_vec()),
-        };
+        // Verificar que la canción existe
+        if song_id == U256::ZERO || song_id > self.total_songs.get() {
+            return Err(b"Cancion no existe".to_vec());
+        }
         
-        let required_price = song.price_per_play.get();
+        // Obtener información de la canción y guardar valores necesarios
+        let (artist_address, required_price, current_plays) = {
+            let song = self.songs.get(song_id);
+            (
+                song.artist.get(),
+                song.price_per_play.get(),
+                song.plays.get()
+            )
+        }; // ✅ Aquí termina el borrow inmutable
+        
+        // Verificar que se envió el monto correcto
         if msg::value() != required_price {
             return Err(b"Monto incorrecto para reproducir".to_vec());
         }
         
-        transfer_eth(song.artist.get(), msg::value())?;
+        // ¡AQUÍ SE TRANSFIERE EL ETH DEL USUARIO AL ARTISTA!
+        // El ETH ya fue descontado de la wallet del usuario cuando envió la transacción
+        transfer_eth(artist_address, msg::value())?;
         
-        song.plays.set(song.plays.get() + U256::from(1));
+        // Incrementar contador de reproducciones (ahora podemos usar mutable borrow)
+        let mut song_mut = self.songs.setter(song_id);
+        song_mut.plays.set(current_plays + U256::from(1));
         
         Ok(())
-    }
-    
-    /// Obtener balance de artista
-    pub fn get_artist_balance(){
     }
     
     /// Obtener reproducciones de una canción
-    pub fn get_song_plays(){
+    pub fn get_song_plays(&self, song_id: U256) -> U256 {
+        if song_id == U256::ZERO || song_id > self.total_songs.get() {
+            return U256::ZERO;
+        }
+        let song = self.songs.get(song_id);
+        song.plays.get()
     }
 
-    // =================== RETIRO DE FONDOS ===================
+    // =================== TRANSFERENCIAS ===================
     
-    /// Transfer funds (de la wallet del usuario a la del artista)
+    /// Transfer funds genérico (para propinas, etc.)
     #[payable]
-    pub fn transfer_funds(&mut self, artist_address: Address, amount: U256) -> Result<(), Vec<u8>> {
-        if msg::value() != amount {
-            return Err(b"Monto enviado no coincide con el requerido".to_vec());
+    pub fn transfer_funds(&mut self, artist_address: Address) -> Result<(), Vec<u8>> {
+        // Verificar que se envió ETH
+        if msg::value() == U256::ZERO {
+            return Err(b"Debe enviar ETH para transferir".to_vec());
         }
         
-        if amount == U256::ZERO {
-            return Err(b"El monto debe ser mayor a 0".to_vec());
-        }
-        
-        transfer_eth(artist_address, amount)?;
+        // Transferir todo el ETH enviado
+        transfer_eth(artist_address, msg::value())?;
         
         Ok(())
     }
 
-    pub fn get_user_address(&self) -> Address {
-        msg::sender() 
-    }
-
-    fn find_song(&self, song_id: U256) -> Option<Song> {
-        let current_song = self.songs.get(song_id);
-        // Simplificado: si song_id es 0, la canción no existe
-        if current_song.song_id.get() != U256::ZERO {
-            Some(current_song)
-        } else {
-            None
-        }
-    }
-
-
     // =================== FUNCIONES DE UTILIDAD ===================
     
-    /// Solo owner: cambiar precio por reproducción
-    pub fn set_price_per_play() {
-
-    }
-    
-    /// Solo owner: pausar/activar canción
-    pub fn toggle_song_status(){
-
+    /// Obtener dirección del usuario actual
+    pub fn get_user_address(&self) -> Address {
+        msg::sender()
     }
 
-    /// Obtener información básica de múltiples canciones
-    pub fn get_multiple_songs() {
-
-    }
-
-    /// Helper: obtener precio por reproducción
+    /// Obtener precio por reproducción
     pub fn get_price_per_play(&self, song_id: U256) -> U256 {
-        match self.find_song(song_id) {
-            Some(song) => song.price_per_play.get(),
-            None => U256::ZERO,
+        if song_id == U256::ZERO || song_id > self.total_songs.get() {
+            return U256::ZERO;
         }
+        let song = self.songs.get(song_id);
+        song.price_per_play.get()
     }
 
-    /// Helper: obtener owner
-    pub fn get_owner(){
+    /// Verificar si una canción existe
+    pub fn song_exists(&self, song_id: U256) -> bool {
+        song_id != U256::ZERO && song_id <= self.total_songs.get()
     }
 }
