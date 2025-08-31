@@ -9,12 +9,16 @@ use stylus_sdk::{
     call::transfer_eth,
 };
 
-sol_storage! {
-    pub struct Song {
-        address artist;
-        uint256 song_id;
-        uint256 price_per_play;
-    }
+
+pub struct Song {
+    Address artist;
+    uint256 song_id;
+    uint256 price_per_play;
+}
+
+pub struct User {
+    Address address;
+    uint256 balance;
 }
 
 sol_storage! {
@@ -26,7 +30,7 @@ sol_storage! {
         // mapping(uint256 => uint256) song_plays;
         /// Precio por reproducción en wei
         // uint256 price_per_play;
-        address user;
+        User listener;
         mapping(uint256 => Song) songs;
     }
 }
@@ -35,8 +39,8 @@ sol_storage! {
 #[public]
 impl MusicStreamingPlatform {
     /// Obtener user
-    pub fn get_user(&self) -> Address {
-        self.user.get()
+    pub fn get_user_address(&self) -> Address {
+        self.listener.address.get()
     }
 
     /// encontrar cancion
@@ -65,7 +69,7 @@ impl MusicStreamingPlatform {
     }
 
     /// Obtener balance de un artista
-    pub fn get_artist_balance(&self, artist: Address) -> U256 {
+    pub fn get_artist_balance(&self, artist) -> U256 {
         
     }
     
