@@ -82,11 +82,10 @@ fi
 log "Contrato desplegado en: $CONTRACT_ADDRESS"
 
 # Guardar deployment info
-if [ -d "../deployments" ]; then
-    echo "Folder exists"
-else
-    mkdir ../deployments
-    echo "Folder does not exist"
+if [ ! -d "../deployments" ]; then
+    echo "No se detecto la carpeta \"deployments\""
+    mkdir "../deployments"
+    echo "Carpeta deployments creada correctamente"
 fi
 DEPLOYMENT_FILE="../deployments/$NETWORK.json"
 cat > $DEPLOYMENT_FILE << EOF
